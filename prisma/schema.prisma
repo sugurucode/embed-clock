@@ -7,3 +7,24 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+
+// 1 つのカウントダウンウィジェットを表すレコード。管理画面で CRUD し、公開すると外部サイトから /api/config?id=... で取得できる
+model Countdown {
+  id              String    @id @default(uuid()) @db.Uuid                     // UUID 主キー。Prisma が uuid() で生成し Postgres は UUID 型で格納
+  title           String                                                       // カウントダウンのタイトル（必須・自由入力）
+  targetAt        DateTime  @map("target_at")                                  // 目標日時。残り時間 = targetAt - 現在時刻 が 0 になったら終了
+  finishedMessage String    @default("Time is up!") @map("finished_message")   // 終了時に時計の代わりに表示する文言
+  theme           String    @default("light")                                  // 見た目のテーマ: light | dark | retro
+  accentColor     String    @default("#2563eb") @map("accent_color")           // アクセントカラー（#RRGGBB 形式）
+  showDays        Boolean   @default(true) @map("show_days")                   // 「日」を表示するか
+  showHours       Boolean   @default(true) @map("show_hours")                  // 「時間」を表示するか
+  showMinutes     Boolean   @default(true) @map("show_minutes")                // 「分」を表示するか
+  showSeconds     Boolean   @default(true) @map("show_seconds")                // 「秒」を表示するか
+  status          String    @default("draft")                                  // 公開状態: draft | published
+  publishedAt     DateTime? @map("published_at")                               // 初めて公開した日時。下書きのままなら NULL
+  createdAt       DateTime  @default(now()) @map("created_at")                 // 作成日時。INSERT 時に自動セット
+  updatedAt       DateTime  @updatedAt @map("updated_at")                      // 更新日時。UPDATE のたびに Prisma が自動更新
+
+  @@index([status]) // 一覧で WHERE status = 'published' を引くため status に索引
+  @@map("countdowns") // TS 側 Countdown（単数）、DB 側 countdowns（複数）
+}
